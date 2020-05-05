@@ -22,7 +22,7 @@ log = "0.4"
 imgui = "0.3"
 
 [dev-dependencies]
-winit = "0.21"
+winit = "0.22"
 raw-window-handle = "0.3"
 env_logger = "0.5"
 image = "0.22"
