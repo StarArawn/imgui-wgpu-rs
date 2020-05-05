@@ -501,7 +501,6 @@ impl Renderer {
                 height,
                 depth: 1,
             },
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
@@ -538,7 +537,7 @@ impl Renderer {
         );
 
         // Resolve the actual copy process.
-        queue.submit(&[encoder.finish()]);
+        queue.submit(Some(encoder.finish()));
 
         let texture = Texture::new(texture, &self.texture_layout, device);
         self.textures.insert(texture)
