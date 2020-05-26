@@ -55,6 +55,7 @@ impl Texture {
 
         // Create the texture sampler.
         let sampler = device.create_sampler(&SamplerDescriptor {
+            label: None,
             address_mode_u: AddressMode::ClampToEdge,
             address_mode_v: AddressMode::ClampToEdge,
             address_mode_w: AddressMode::ClampToEdge,
@@ -195,10 +196,7 @@ impl Renderer {
             layout: &uniform_layout,
             bindings: &[Binding {
                 binding: 0,
-                resource: BindingResource::Buffer {
-                    buffer: &uniform_buffer,
-                    range: 0..size,
-                },
+                resource: BindingResource::Buffer(uniform_buffer.slice(..)),
             }],
         });
 
@@ -404,8 +402,8 @@ impl Renderer {
         let vertex_buffer = &self.vertex_buffers[draw_list_buffers_index];
 
         // Make sure the current buffers are attached to the render pass.
-        rpass.set_index_buffer(&index_buffer, 0, WHOLE_BUFFER);
-        rpass.set_vertex_buffer(0, &vertex_buffer, 0, WHOLE_BUFFER);
+        rpass.set_index_buffer(index_buffer.slice(..));
+        rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
         for cmd in draw_list.commands() {
             match cmd {
@@ -519,14 +517,15 @@ impl Renderer {
         encoder.copy_buffer_to_texture(
             BufferCopyView {
                 buffer: &buffer,
-                offset: 0,
-                bytes_per_row: bytes as u32 / height,
-                rows_per_image: height,
+                layout: wgpu::TextureDataLayout {
+                    offset: 0,
+                    bytes_per_row: bytes as u32 / height,
+                    rows_per_image: height,
+                }
             },
             TextureCopyView {
                 texture: &texture,
                 mip_level: 0,
-                array_layer: 0,
                 origin: Origin3d { x: 0, y: 0, z: 0 },
             },
             Extent3d {

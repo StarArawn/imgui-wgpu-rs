@@ -47,7 +47,7 @@ fn main() {
             anisotropic_filtering: false,
         },
         limits: wgpu::Limits::default(),
-    })).unwrap();
+    }, None)).unwrap();
 
     // Set up swap chain
     let mut sc_desc = wgpu::SwapChainDescriptor {
