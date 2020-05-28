@@ -95,7 +95,7 @@ fn main() {
     let mut renderer = Renderer::new(
         &mut imgui,
         &device,
-        &mut queue,
+        &queue,
         sc_desc.format,
         Some(clear_color),
     );

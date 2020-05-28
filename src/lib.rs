@@ -105,7 +105,7 @@ impl Renderer {
     pub fn new_glsl(
         imgui: &mut Context,
         device: &Device,
-        queue: &mut Queue,
+        queue: &Queue,
         format: TextureFormat,
         clear_color: Option<Color>,
     ) -> Renderer {
@@ -119,7 +119,7 @@ impl Renderer {
     pub fn new(
         imgui: &mut Context,
         device: &Device,
-        queue: &mut Queue,
+        queue: &Queue,
         format: TextureFormat,
         clear_color: Option<Color>,
     ) -> Renderer {
@@ -151,7 +151,7 @@ impl Renderer {
     pub fn new_static(
         imgui: &mut Context,
         device: &Device,
-        queue: &mut Queue,
+        queue: &Queue,
         format: TextureFormat,
         clear_color: Option<Color>,
     ) -> Renderer {
@@ -162,7 +162,7 @@ impl Renderer {
     fn new_impl(
         imgui: &mut Context,
         device: &Device,
-        queue: &mut Queue,
+        queue: &Queue,
         format: TextureFormat,
         clear_color: Option<Color>,
         vs_raw: Vec<u32>,
@@ -473,7 +473,7 @@ impl Renderer {
     /// Updates the texture on the GPU corresponding to the current imgui font atlas.
     ///
     /// This has to be called after loading a font.
-    pub fn reload_font_texture(&mut self, imgui: &mut Context, device: &Device, queue: &mut Queue) {
+    pub fn reload_font_texture(&mut self, imgui: &mut Context, device: &Device, queue: &Queue) {
         let mut atlas = imgui.fonts();
         let handle = atlas.build_rgba32_texture();
         let font_texture_id =
@@ -486,7 +486,7 @@ impl Renderer {
     pub fn upload_texture(
         &mut self,
         device: &Device,
-        queue: &mut Queue,
+        queue: &Queue,
         data: &[u8],
         width: u32,
         height: u32,
