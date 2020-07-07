@@ -64,7 +64,7 @@ impl Texture {
             mipmap_filter: FilterMode::Linear,
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: CompareFunction::Always,
+            ..Default::default()
         });
 
         // Create the texture bind group from the layout.
@@ -169,8 +169,8 @@ impl Renderer {
         fs_raw: Vec<u32>,
     ) -> Renderer {
         // Load shaders.
-        let vs_module = device.create_shader_module(&vs_raw);
-        let fs_module = device.create_shader_module(&fs_raw);
+        let vs_module = device.create_shader_module(wgpu::ShaderModuleSource::SpirV(&vs_raw));
+        let fs_module = device.create_shader_module(wgpu::ShaderModuleSource::SpirV(&fs_raw));
 
         // Create the uniform matrix buffer.
         let size = 64;
@@ -178,16 +178,20 @@ impl Renderer {
             label: None,
             size,
             usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
+            mapped_at_creation: false,
         });
 
         // Create the uniform matrix buffer bind group layout.
         let uniform_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
-            bindings: &[BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStage::VERTEX,
-                ty: BindingType::UniformBuffer { dynamic: false },
-            }],
+            bindings: &[wgpu::BindGroupLayoutEntry::new(
+                0,
+                wgpu::ShaderStage::VERTEX,
+                BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: wgpu::BufferSize::new(size),
+                },
+            )],
         });
 
         // Create the uniform matrix buffer bind group.
@@ -204,20 +208,20 @@ impl Renderer {
         let texture_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
             bindings: &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: BindingType::SampledTexture {
+                wgpu::BindGroupLayoutEntry::new(
+                    0,
+                    wgpu::ShaderStage::FRAGMENT,
+                    BindingType::SampledTexture {
                         multisampled: false,
                         component_type: TextureComponentType::Float,
                         dimension: TextureViewDimension::D2,
                     },
-                },
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: BindingType::Sampler { comparison: false },
-                },
+                ),
+                wgpu::BindGroupLayoutEntry::new(
+                    1,
+                    wgpu::ShaderStage::FRAGMENT,
+                    BindingType::Sampler { comparison: false },
+                ),
             ],
         });
 
@@ -346,17 +350,18 @@ impl Renderer {
             color_attachments: &[RenderPassColorAttachmentDescriptor {
                 attachment: &view,
                 resolve_target: None,
-                load_op: match self.clear_color {
-                    Some(_) => LoadOp::Clear,
-                    _ => LoadOp::Load,
+                ops: wgpu::Operations {
+                    load: match self.clear_color {
+                        Some(_) => LoadOp::Clear(self.clear_color.unwrap_or(Color {
+                            r: 0.0,
+                            g: 0.0,
+                            b: 0.0,
+                            a: 1.0,
+                        })),
+                        _ => LoadOp::Load,
+                    },
+                    store: true,
                 },
-                store_op: StoreOp::Store,
-                clear_color: self.clear_color.unwrap_or(Color {
-                    r: 0.0,
-                    g: 0.0,
-                    b: 0.0,
-                    a: 1.0,
-                }),
             }],
             depth_stencil_attachment: None,
         });
@@ -508,25 +513,17 @@ impl Renderer {
 
         // Upload the actual data to a wgpu buffer.
         let bytes = data.len();
-        let buffer = device.create_buffer_with_data(data, BufferUsage::COPY_SRC);
-
-        // Make sure we have an active encoder.
-        let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: None });
-
-        // Schedule a copy from the buffer to the texture.
-        encoder.copy_buffer_to_texture(
-            BufferCopyView {
-                buffer: &buffer,
-                layout: wgpu::TextureDataLayout {
-                    offset: 0,
-                    bytes_per_row: bytes as u32 / height,
-                    rows_per_image: height,
-                }
-            },
+        queue.write_texture(
             TextureCopyView {
                 texture: &texture,
                 mip_level: 0,
                 origin: Origin3d { x: 0, y: 0, z: 0 },
+            },
+            data,
+            wgpu::TextureDataLayout {
+                offset: 0,
+                bytes_per_row: bytes as u32 / height,
+                rows_per_image: height,
             },
             Extent3d {
                 width,
@@ -534,9 +531,6 @@ impl Renderer {
                 depth: 1,
             },
         );
-
-        // Resolve the actual copy process.
-        queue.submit(Some(encoder.finish()));
 
         let texture = Texture::new(texture, &self.texture_layout, device);
         self.textures.insert(texture)

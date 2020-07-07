@@ -15,7 +15,7 @@ fn main() {
 
     // Set up window and GPU
     let event_loop = EventLoop::new();
-    let instance = wgpu::Instance::new();
+    let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
     let mut hidpi_factor = 1.0;
     let (window, mut size, surface) = {
         let version = env!("CARGO_PKG_VERSION");
@@ -33,20 +33,23 @@ fn main() {
         (window, size, surface)
     };
 
+    let (needed_features, unsafe_extensions) = (wgpu::Features::empty(), wgt::UnsafeFeatures::disallow());
+
     let adapter = block_on(instance.request_adapter(
         &wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: Some(&surface),
         },
-        wgpu::BackendBit::PRIMARY,
+        unsafe_extensions,
     ))
     .unwrap();
 
+    let adapter_features = adapter.features();
+
     let (mut device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        extensions: wgpu::Extensions {
-            anisotropic_filtering: false,
-        },
+        features: adapter_features & needed_features,
         limits: wgpu::Limits::default(),
+        shader_validation: true,
     }, None)).unwrap();
 
     // Set up swap chain
@@ -169,7 +172,7 @@ fn main() {
                 let delta_s = last_frame.elapsed();
                 last_frame = imgui.io_mut().update_delta_time(last_frame);
 
-                let frame = match swap_chain.get_next_texture() {
+                let frame = match swap_chain.get_next_frame() {
                     Ok(frame) => frame,
                     Err(e) => {
                         eprintln!("dropped frame: {:?}", e);
@@ -216,7 +219,7 @@ fn main() {
                     platform.prepare_render(&ui, &window);
                 }
                 renderer
-                    .render(ui.render(), &mut device, &mut encoder, &frame.view)
+                    .render(ui.render(), &mut device, &mut encoder, &frame.output.view)
                     .expect("Rendering failed");
 
                 queue.submit(Some(encoder.finish()));
