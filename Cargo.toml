@@ -16,7 +16,7 @@ license = "MIT OR Apache-2.0"
 default = []
 
 [dependencies]
-wgpu = { git = "https://github.com/gfx-rs/wgpu-rs", rev="87da83cb4f107560e113f3a7d31fcd323653cd2e" }
+wgpu = { git = "https://github.com/gfx-rs/wgpu-rs", rev="e785b213e409460649da5c78068f653d2634bafc" }
 glsl-to-spirv = { version = "0.1", optional = true }
 log = "0.4"
 imgui = { version = "0.4.0-pre", git = "https://github.com/jaynus/imgui-rs", rev="fd3caf3e5b1141e8af3725f8c6898524c14426b0" }
@@ -33,11 +33,6 @@ version = "0.4.0-pre"
 git = "https://github.com/jaynus/imgui-rs"
 rev = "fd3caf3e5b1141e8af3725f8c6898524c14426b0"
 default-features = true
-
-[dev-dependencies.wgt]
-package = "wgpu-types"
-git = "https://github.com/gfx-rs/wgpu"
-rev = "43c67ac59c2dedaa4d78601bc460aab7c3257973"
 
 [package.metadata.docs.rs]
 all-features = true

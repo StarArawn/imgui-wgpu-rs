@@ -33,8 +33,6 @@ fn main() {
         (window, size, surface)
     };
 
-    let (needed_features, unsafe_extensions) = (wgpu::Features::empty(), wgt::UnsafeFeatures::disallow());
-
     let adapter = block_on(instance.request_adapter(
         &wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
@@ -46,7 +44,7 @@ fn main() {
     let adapter_features = adapter.features();
 
     let (mut device, mut queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        features: adapter_features & needed_features,
+        features: adapter_features,
         limits: wgpu::Limits::default(),
         shader_validation: true,
     }, None)).unwrap();

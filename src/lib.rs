@@ -7,10 +7,6 @@ use std::borrow::Cow;
 
 pub type RendererResult<T> = Result<T, RendererError>;
 
-// TODO: This value may change
-// https://github.com/gfx-rs/wgpu-rs/issues/199
-const WHOLE_BUFFER: u64 = 0;
-
 #[derive(Clone, Debug)]
 pub enum RendererError {
     BadTexture(TextureId),
@@ -72,7 +68,7 @@ impl Texture {
         let bind_group = device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout,
-            entries: &[
+            entries: Cow::Borrowed(&[
                 BindGroupEntry {
                     binding: 0,
                     resource: BindingResource::TextureView(&view),
@@ -81,7 +77,7 @@ impl Texture {
                     binding: 1,
                     resource: BindingResource::Sampler(&sampler),
                 },
-            ],
+            ]),
         });
 
         Texture { bind_group }
@@ -185,30 +181,30 @@ impl Renderer {
         // Create the uniform matrix buffer bind group layout.
         let uniform_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
-            entries: &[wgpu::BindGroupLayoutEntry::new(
+            entries: Cow::Borrowed(&[wgpu::BindGroupLayoutEntry::new(
                 0,
                 wgpu::ShaderStage::VERTEX,
                 BindingType::UniformBuffer {
                     dynamic: false,
                     min_binding_size: wgpu::BufferSize::new(size),
                 },
-            )],
+            )]),
         });
 
         // Create the uniform matrix buffer bind group.
         let uniform_bind_group = device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout: &uniform_layout,
-            entries: &[BindGroupEntry {
+            entries: Cow::Borrowed(&[BindGroupEntry {
                 binding: 0,
                 resource: BindingResource::Buffer(uniform_buffer.slice(..)),
-            }],
+            }]),
         });
 
         // Create the texture layout for further usage.
         let texture_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
-            entries: &[
+            entries: Cow::Borrowed(&[
                 wgpu::BindGroupLayoutEntry::new(
                     0,
                     wgpu::ShaderStage::FRAGMENT,
@@ -223,13 +219,13 @@ impl Renderer {
                     wgpu::ShaderStage::FRAGMENT,
                     BindingType::Sampler { comparison: false },
                 ),
-            ],
+            ]),
         });
 
         // Create the render pipeline layout.
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            bind_group_layouts: &[&uniform_layout, &texture_layout],
-            push_constant_ranges: &[],
+            bind_group_layouts: Cow::Borrowed(&[&uniform_layout, &texture_layout]),
+            push_constant_ranges: Cow::Borrowed(&[]),
         });
 
         // Create the render pipeline.
@@ -237,21 +233,19 @@ impl Renderer {
             layout: &pipeline_layout,
             vertex_stage: ProgrammableStageDescriptor {
                 module: &vs_module,
-                entry_point: "main",
+                entry_point: Cow::Borrowed("main"),
             },
             fragment_stage: Some(ProgrammableStageDescriptor {
                 module: &fs_module,
-                entry_point: "main",
+                entry_point: Cow::Borrowed("main"),
             }),
             rasterization_state: Some(RasterizationStateDescriptor {
                 front_face: FrontFace::Cw,
                 cull_mode: CullMode::None,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
+                ..Default::default()
             }),
             primitive_topology: PrimitiveTopology::TriangleList,
-            color_states: &[ColorStateDescriptor {
+            color_states: Cow::Borrowed(&[ColorStateDescriptor {
                 format,
                 color_blend: BlendDescriptor {
                     src_factor: BlendFactor::SrcAlpha,
@@ -264,14 +258,14 @@ impl Renderer {
                     operation: BlendOperation::Add,
                 },
                 write_mask: ColorWrite::ALL,
-            }],
+            }]),
             depth_stencil_state: None,
             vertex_state: VertexStateDescriptor {
                 index_format: IndexFormat::Uint16,
-                vertex_buffers: &[VertexBufferDescriptor {
+                vertex_buffers: Cow::Borrowed(&[VertexBufferDescriptor {
                     stride: size_of::<DrawVert>() as BufferAddress,
                     step_mode: InputStepMode::Vertex,
-                    attributes: &[
+                    attributes: Cow::Borrowed(&[
                         VertexAttributeDescriptor {
                             format: VertexFormat::Float2,
                             shader_location: 0,
@@ -287,8 +281,8 @@ impl Renderer {
                             shader_location: 2,
                             offset: 16,
                         },
-                    ],
-                }],
+                    ]),
+                }]),
             },
             sample_count: 1,
             sample_mask: !0,
@@ -349,7 +343,7 @@ impl Renderer {
 
         // Start a new renderpass and prepare it properly.
         let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
-            color_attachments: &[RenderPassColorAttachmentDescriptor {
+            color_attachments: Cow::Borrowed(&[RenderPassColorAttachmentDescriptor {
                 attachment: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
@@ -364,7 +358,7 @@ impl Renderer {
                     },
                     store: true,
                 },
-            }],
+            }]),
             depth_stencil_attachment: None,
         });
         rpass.set_pipeline(&self.pipeline);
