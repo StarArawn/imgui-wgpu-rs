@@ -40,7 +40,6 @@ fn main() {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: Some(&surface),
         },
-        unsafe_extensions,
     ))
     .unwrap();
 
@@ -172,7 +171,7 @@ fn main() {
                 let delta_s = last_frame.elapsed();
                 last_frame = imgui.io_mut().update_delta_time(last_frame);
 
-                let frame = match swap_chain.get_next_frame() {
+                let frame = match swap_chain.get_current_frame() {
                     Ok(frame) => frame,
                     Err(e) => {
                         eprintln!("dropped frame: {:?}", e);
